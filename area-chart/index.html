@@ -2,14 +2,20 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Area Chart Gradient Simulator</title>
-	<link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400' rel='stylesheet' type='text/css'>
+	<title>SVG グラデーションエディタ</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="style.css">
 </head>
 <body>
-	<h1>Area Chart Gradient Simulator</h1>
+	<header class="app-header">
+		<h1 class="app-title">SVG グラデーションエディタ</h1>
+		<p class="app-subtitle">リアルタイムにグラデーションを調整し、SVGコードとして出力できます。</p>
+	</header>
 
-	<div class="container">
+	<main class="app-main">
+		<div class="container">
 		<!-- Left Panel: Controls -->
 		<div class="panel panel-left">
 
@@ -85,29 +91,33 @@
 
 				<div id="stopsContainer"></div>
 			</div>
+		</div>
 
-			<!-- Export -->
-			<div class="export-section">
-				<div class="section-title">グラデーション定義</div>
-				<div class="export-code" id="exportCode"></div>
-
-				<div class="export-subsection">
-					<div class="export-subsection-title">参考：グラデーション定義をSVGに追加するコードの例</div>
+		<!-- Right Panel: Chart + Export -->
+		<div class="panel panel-right">
+			<div class="panel-title">プレビュー</div>
+			<div class="chart-wrapper">
+				<div id="chart"></div>
+			</div>
+			<section class="panel panel-code inline-code-panel">
+				<div class="panel-title code-title">エクスポートコード</div>
+				<div class="code-section">
+					<div class="code-section-title">作成したグラデーション</div>
+					<div class="export-code" id="exportCode"></div>
+				</div>
+				<div class="code-section">
+					<div class="code-section-title">コード例：グラデーション定義</div>
 					<div class="export-code" id="svgCode"></div>
 				</div>
-
-				<div class="export-subsection">
-					<div class="export-subsection-title">参考：グラデーションをエリアチャートに適用するコードの例</div>
+				<div class="code-section">
+					<div class="code-section-title">コード例：チャートへの適用</div>
 					<div class="export-code" id="applyCode"></div>
 				</div>
-			</div>
-		</div>
-
-		<!-- Right Panel: Chart -->
-		<div class="panel panel-right">
-			<div id="chart"></div>
+			</section>
 		</div>
 	</div>
+
+	</main>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
 	<script src="script.js"></script>

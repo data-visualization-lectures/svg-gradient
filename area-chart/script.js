@@ -1,14 +1,16 @@
 // アプリケーション状態
 const state = {
 	chartType: 'area',
+	previousChartType: null,
+	barRotationApplied: false,
 	dataset: [],
 	stops: [],
 	gradient: {
-		angle: 270,
-		x1: 0,
-		y1: 100,
-		x2: 0,
-		y2: 0,
+		angle: 90,
+		x1: 50,
+		y1: 0,
+		x2: 50,
+		y2: 100,
 		radialDirection: 'center-to-edge'
 	}
 };
@@ -20,7 +22,7 @@ const presets = {
 			{ offset: 0, color: "#21825C", opacity: 0.6 },
 			{ offset: 80, color: "#FFFFFF", opacity: 0 }
 		],
-		angle: 270
+		angle: 90
 	},
 	multipleColors: {
 		stops: [
@@ -30,7 +32,7 @@ const presets = {
 			{ offset: 60, color: "#FFDE74", opacity: 0.4 },
 			{ offset: 100, color: "#FFFFFF", opacity: 0.2 }
 		],
-		angle: 270
+		angle: 90
 	},
 	coolTones: {
 		stops: [
@@ -38,7 +40,7 @@ const presets = {
 			{ offset: 50, color: "#87CEEB", opacity: 0.5 },
 			{ offset: 100, color: "#E0F6FF", opacity: 0.1 }
 		],
-		angle: 270
+		angle: 90
 	},
 	warmTones: {
 		stops: [
@@ -46,7 +48,7 @@ const presets = {
 			{ offset: 50, color: "#F7931E", opacity: 0.5 },
 			{ offset: 100, color: "#FFFACD", opacity: 0.1 }
 		],
-		angle: 270
+		angle: 90
 	}
 };
 
@@ -88,6 +90,7 @@ function setChartType(type) {
 		console.warn("Unsupported chart type:", type);
 		return;
 	}
+	state.previousChartType = state.chartType;
 	state.chartType = type;
 	adjustChartGradientDefaults();
 	updateUI();
@@ -646,11 +649,20 @@ chartGradient.selectAll("stop")
 function adjustChartGradientDefaults() {
 	if (state.chartType === 'bar' && isAngleApproximately(state.gradient.angle, 270)) {
 		rotateGradientBy180();
+		state.barRotationApplied = true;
+	} else if (state.chartType === 'bar') {
+		state.barRotationApplied = false;
+	} else if (state.chartType === 'area') {
+		if (state.previousChartType === 'bar' && state.barRotationApplied && isAngleApproximately(state.gradient.angle, 90)) {
+			rotateGradientBy180();
+		}
+		state.barRotationApplied = false;
 	} else if (state.chartType === 'pie') {
 		const firstStop = state.stops[0];
 		const lastStop = state.stops[state.stops.length - 1];
 		if (firstStop) firstStop.offset = 0;
 		if (lastStop) lastStop.offset = 100;
+		state.barRotationApplied = false;
 	}
 }
 
