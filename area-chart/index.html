@@ -13,6 +13,16 @@
 		<!-- Left Panel: Controls -->
 		<div class="panel panel-left">
 
+			<!-- Chart Type Selector -->
+			<div class="control-group">
+				<label class="control-label" for="chartTypeSelect">チャートタイプ</label>
+				<select id="chartTypeSelect" onchange="setChartType(this.value)">
+					<option value="area">エリアチャート</option>
+					<option value="bar">棒グラフ</option>
+					<option value="pie">円グラフ</option>
+				</select>
+			</div>
+
 			<!-- Presets -->
 			<div class="control-group">
 				<div class="section-title">プリセット</div>
@@ -33,14 +43,19 @@
 					<span id="coordinatesDisplay">x1: 0%, y1: 100%<br>x2: 0%, y2: 0%</span>
 				</div>
 
-				<div class="direction-controls">
+				<div class="direction-controls" id="directionControls">
 					<button class="btn-secondary" onclick="setDirection(270)">↑ 上</button>
 					<button class="btn-secondary" onclick="setDirection(0)">→ 右</button>
 					<button class="btn-secondary" onclick="setDirection(90)">↓ 下</button>
 					<button class="btn-secondary" onclick="setDirection(180)">← 左</button>
 				</div>
 
-				<div class="coordinates-inputs">
+				<div class="radial-controls" id="radialControls">
+					<button class="btn-secondary" data-mode="center-to-edge" onclick="setPieDirection('center-to-edge')">中心 → 外周</button>
+					<button class="btn-secondary" data-mode="edge-to-center" onclick="setPieDirection('edge-to-center')">外周 → 中心</button>
+				</div>
+
+				<div class="coordinates-inputs" id="coordinatesInputs">
 					<div class="control-group">
 						<label class="control-label">開始点 X (%)</label>
 						<input type="number" id="x1Input" min="0" max="100" value="0" onchange="updateFromCoordinates()">
@@ -66,7 +81,7 @@
 
 				<div class="gradient-preview" id="gradientPreview"></div>
 
-				<button class="btn-primary" onclick="addStop()">+ ストップを追加</button>
+				<button class="btn-primary" id="addStopButton" onclick="addStop()">+ ストップを追加</button>
 
 				<div id="stopsContainer"></div>
 			</div>

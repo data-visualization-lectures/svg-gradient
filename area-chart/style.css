@@ -201,6 +201,31 @@ input[type="color"] {
 	fill: #21825C;
 }
 
+.bar {
+	stroke: rgba(0, 0, 0, 0.15);
+	stroke-width: 0.8;
+}
+
+.slice {
+	stroke: rgba(0, 0, 0, 0.15);
+	stroke-width: 0.8;
+}
+
+.radial-controls {
+	display: none;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.radial-controls button {
+	width: 100%;
+}
+
+.radial-controls button.is-active {
+	box-shadow: 0 0 0 2px #007bff inset;
+}
+
 .direction-controls {
 	display: grid;
 	grid-template-columns: 1fr 1fr;

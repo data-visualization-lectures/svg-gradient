@@ -1,8 +1,17 @@
-// グローバル変数
-let dataset = [];
-let stops = [];
-let gradientAngle = 270;
-let x1 = 0, y1 = 100, x2 = 0, y2 = 0;
+// アプリケーション状態
+const state = {
+	chartType: 'area',
+	dataset: [],
+	stops: [],
+	gradient: {
+		angle: 270,
+		x1: 0,
+		y1: 100,
+		x2: 0,
+		y2: 0,
+		radialDirection: 'center-to-edge'
+	}
+};
 
 // プリセット定義
 const presets = {
@@ -41,10 +50,18 @@ const presets = {
 	}
 };
 
+// 描画関数マップ
+const chartRenderers = {
+	area: renderAreaChart,
+	bar: renderBarChart,
+	pie: renderPieChart
+};
+
 // 初期化
 window.addEventListener('DOMContentLoaded', function() {
 	loadData();
 	applyPreset('oneColor');
+	updateUI();
 });
 
 // データ読み込み
@@ -54,56 +71,62 @@ function loadData() {
 			console.error("Error loading data:", error);
 			return;
 		}
-		dataset = data;
-		// 日付をパース
+		state.dataset = data;
 		const parseDate = d3.time.format("%Y-%m-%d").parse;
-		dataset.forEach(function(d) {
+		const formatShortDate = d3.time.format("%m/%d");
+		state.dataset.forEach(function(d) {
 			d.date = parseDate(d.date);
+			d.dateLabel = formatShortDate(d.date);
 		});
 		drawChart();
 	});
 }
 
+// チャートタイプ切り替え
+function setChartType(type) {
+	if (!chartRenderers[type]) {
+		console.warn("Unsupported chart type:", type);
+		return;
+	}
+	state.chartType = type;
+	adjustChartGradientDefaults();
+	updateUI();
+	drawChart();
+}
+
 // プリセット適用
 function applyPreset(presetName) {
 	const preset = presets[presetName];
-	stops = JSON.parse(JSON.stringify(preset.stops));
-	gradientAngle = preset.angle;
-	angleToCoordinates(gradientAngle);
+	if (!preset) return;
+	state.stops = JSON.parse(JSON.stringify(preset.stops));
+	state.gradient.angle = preset.angle;
+	const coords = angleToCoordinates(state.gradient.angle);
+	Object.assign(state.gradient, coords);
+	adjustChartGradientDefaults();
 	updateUI();
 	drawChart();
 }
 
 // 角度から座標に変換
 function angleToCoordinates(angle) {
-	// 角度を正規化 (0-360)
 	angle = ((angle % 360) + 360) % 360;
-
-	// ラジアンに変換
 	const radian = (angle * Math.PI) / 180;
-
-	// 単位円上の点
 	const cos = Math.cos(radian);
 	const sin = Math.sin(radian);
-
-	// グラデーション開始点と終点を計算（中心から外側へ）
 	const distance = 100;
-	x1 = 50 - (cos * distance / 2);
-	y1 = 50 - (sin * distance / 2);
-	x2 = 50 + (cos * distance / 2);
-	y2 = 50 + (sin * distance / 2);
 
-	// 値を0-100の範囲にクリップ
-	x1 = Math.max(0, Math.min(100, x1));
-	y1 = Math.max(0, Math.min(100, y1));
-	x2 = Math.max(0, Math.min(100, x2));
-	y2 = Math.max(0, Math.min(100, y2));
+	const x1 = clamp(50 - (cos * distance / 2), 0, 100);
+	const y1 = clamp(50 - (sin * distance / 2), 0, 100);
+	const x2 = clamp(50 + (cos * distance / 2), 0, 100);
+	const y2 = clamp(50 + (sin * distance / 2), 0, 100);
+
+	return { x1, y1, x2, y2 };
 }
 
 // 座標から角度に変換
-function coordinatesToAngle() {
-	const dx = x2 - x1;
-	const dy = y2 - y1;
+function coordinatesToAngle(gradient) {
+	const dx = gradient.x2 - gradient.x1;
+	const dy = gradient.y2 - gradient.y1;
 	let angle = Math.atan2(-dy, dx) * 180 / Math.PI;
 	angle = ((angle % 360) + 360) % 360;
 	return angle;
@@ -111,39 +134,102 @@ function coordinatesToAngle() {
 
 // 角度スライダーの変更
 function updateFromAngle(angle) {
-	gradientAngle = parseInt(angle);
-	angleToCoordinates(gradientAngle);
+	state.gradient.angle = parseInt(angle, 10);
+	const coords = angleToCoordinates(state.gradient.angle);
+	Object.assign(state.gradient, coords);
 	updateUI();
 	drawChart();
 }
 
 // 座標入力の変更
 function updateFromCoordinates() {
-	x1 = parseFloat(document.getElementById('x1Input').value);
-	y1 = parseFloat(document.getElementById('y1Input').value);
-	x2 = parseFloat(document.getElementById('x2Input').value);
-	y2 = parseFloat(document.getElementById('y2Input').value);
-	gradientAngle = coordinatesToAngle();
+	state.gradient.x1 = parseFloat(document.getElementById('x1Input').value);
+	state.gradient.y1 = parseFloat(document.getElementById('y1Input').value);
+	state.gradient.x2 = parseFloat(document.getElementById('x2Input').value);
+	state.gradient.y2 = parseFloat(document.getElementById('y2Input').value);
+	state.gradient.angle = coordinatesToAngle(state.gradient);
 	updateUI();
 	drawChart();
 }
 
 // 方向ボタンの設定
 function setDirection(angle) {
-	gradientAngle = angle;
-	angleToCoordinates(angle);
+	if (state.chartType === 'pie') return;
+	state.gradient.angle = angle;
+	const coords = angleToCoordinates(angle);
+	Object.assign(state.gradient, coords);
+	updateUI();
+	drawChart();
+}
+
+// 円グラフ用グラデーション方向
+function setPieDirection(mode) {
+	if (mode !== 'center-to-edge' && mode !== 'edge-to-center') return;
+	state.gradient.radialDirection = mode;
 	updateUI();
 	drawChart();
 }
 
 // UIの更新
 function updateUI() {
-	document.getElementById('x1Input').value = x1.toFixed(0);
-	document.getElementById('y1Input').value = y1.toFixed(0);
-	document.getElementById('x2Input').value = x2.toFixed(0);
-	document.getElementById('y2Input').value = y2.toFixed(0);
-	document.getElementById('coordinatesDisplay').innerHTML =
-		`x1: ${x1.toFixed(0)}%, y1: ${y1.toFixed(0)}%<br>x2: ${x2.toFixed(0)}%, y2: ${y2.toFixed(0)}%`;
+	const x1Input = document.getElementById('x1Input');
+	const y1Input = document.getElementById('y1Input');
+	const x2Input = document.getElementById('x2Input');
+	const y2Input = document.getElementById('y2Input');
+	const chartTypeSelect = document.getElementById('chartTypeSelect');
+
+	if (chartTypeSelect) {
+		chartTypeSelect.value = state.chartType;
+	}
+
+	const directionControls = document.getElementById('directionControls');
+	const radialControls = document.getElementById('radialControls');
+	const coordinatesInputs = document.getElementById('coordinatesInputs');
+	const addStopButton = document.getElementById('addStopButton');
+
+	if (directionControls) {
+		directionControls.style.display = state.chartType === 'pie' ? 'none' : 'grid';
+	}
+
+	if (coordinatesInputs) {
+		coordinatesInputs.style.display = state.chartType === 'pie' ? 'none' : 'grid';
+	}
+
+	if (radialControls) {
+		radialControls.style.display = state.chartType === 'pie' ? 'flex' : 'none';
+		if (state.chartType === 'pie') {
+			const buttons = radialControls.querySelectorAll('button[data-mode]');
+			buttons.forEach(button => {
+				const mode = button.getAttribute('data-mode');
+				if (mode === state.gradient.radialDirection) {
+					button.classList.add('is-active');
+				} else {
+					button.classList.remove('is-active');
+				}
+			});
+		}
+	}
+
+	if (addStopButton) {
+		addStopButton.style.display = 'inline-block';
+	}
+
+	if (x1Input && y1Input && x2Input && y2Input) {
+		x1Input.value = state.gradient.x1.toFixed(0);
+		y1Input.value = state.gradient.y1.toFixed(0);
+		x2Input.value = state.gradient.x2.toFixed(0);
+		y2Input.value = state.gradient.y2.toFixed(0);
+	}
+
+	const display = document.getElementById('coordinatesDisplay');
+	if (display) {
+		if (state.chartType === 'pie') {
+			const label = state.gradient.radialDirection === 'center-to-edge' ? '中心 → 外周' : '外周 → 中心';
+			display.innerHTML = `モード: ${label}`;
+		} else {
+			display.innerHTML = `x1: ${state.gradient.x1.toFixed(0)}%, y1: ${state.gradient.y1.toFixed(0)}%<br>x2: ${state.gradient.x2.toFixed(0)}%, y2: ${state.gradient.y2.toFixed(0)}%`;
+		}
+	}
 
 	renderStops();
 	updateGradientPreview();
@@ -152,8 +238,8 @@ function updateUI() {
 
 // ストップを追加
 function addStop() {
-	const newOffset = stops.length > 0 ? stops[stops.length - 1].offset + 20 : 50;
-	stops.push({
+	const newOffset = state.stops.length > 0 ? state.stops[state.stops.length - 1].offset + 20 : 50;
+	state.stops.push({
 		offset: Math.min(100, newOffset),
 		color: "#0000FF",
 		opacity: 0.5
@@ -164,8 +250,8 @@ function addStop() {
 
 // ストップを削除
 function removeStop(index) {
-	if (stops.length > 2) {
-		stops.splice(index, 1);
+	if (state.stops.length > 2) {
+		state.stops.splice(index, 1);
 		updateUI();
 		drawChart();
 	} else {
@@ -175,12 +261,15 @@ function removeStop(index) {
 
 // ストップを更新
 function updateStop(index, field, value) {
+	const stop = state.stops[index];
+	if (!stop) return;
+
 	if (field === 'offset') {
-		stops[index].offset = Math.max(0, Math.min(100, parseInt(value)));
+		stop.offset = clamp(parseInt(value, 10), 0, 100);
 	} else if (field === 'color') {
-		stops[index].color = value;
+		stop.color = value;
 	} else if (field === 'opacity') {
-		stops[index].opacity = Math.max(0, Math.min(1, parseFloat(value)));
+		stop.opacity = clamp(parseFloat(value), 0, 1);
 	}
 	updateUI();
 	drawChart();
@@ -189,24 +278,26 @@ function updateStop(index, field, value) {
 // ストップのレンダリング
 function renderStops() {
 	const container = document.getElementById('stopsContainer');
+	if (!container) return;
+
 	container.innerHTML = '';
 
-	stops.forEach((stop, index) => {
+	state.stops.forEach((stop, index) => {
 		const stopElement = document.createElement('div');
 		stopElement.className = 'stop-item';
 		stopElement.innerHTML = `
 			<div class="stop-header">
 				<span class="stop-number">ストップ ${index + 1}</span>
-				${stops.length > 2 ? `<button class="btn-danger" onclick="removeStop(${index})">削除</button>` : ''}
+				${state.stops.length > 2 ? `<button class="btn-danger" onclick="removeStop(${index})">削除</button>` : ''}
 			</div>
 			<div class="color-input-wrapper">
 				<input type="color" value="${stop.color}" onchange="updateStop(${index}, 'color', this.value)">
-				<input type="text" class="color-value" value="${stop.color}" onchange="updateStop(${index}, 'color', this.value)">
-			</div>
-			<div class="stop-controls">
-				<div>
-					<label class="control-label">オフセット (%)</label>
-					<input type="number" min="0" max="100" value="${stop.offset}" onchange="updateStop(${index}, 'offset', this.value)">
+					<input type="text" class="color-value" value="${stop.color}" onchange="updateStop(${index}, 'color', this.value)">
+				</div>
+				<div class="stop-controls">
+					<div>
+						<label class="control-label">オフセット (%)</label>
+						<input type="number" min="0" max="100" value="${stop.offset}" onchange="updateStop(${index}, 'offset', this.value)">
 				</div>
 				<div>
 					<label class="control-label">不透明度</label>
@@ -221,9 +312,10 @@ function renderStops() {
 // グラデーションプレビューの更新
 function updateGradientPreview() {
 	const preview = document.getElementById('gradientPreview');
-	let gradientString = `linear-gradient(${gradientAngle}deg`;
+	if (!preview) return;
 
-	stops.forEach(stop => {
+	let gradientString = `linear-gradient(${state.gradient.angle}deg`;
+	state.stops.forEach(stop => {
 		gradientString += `, ${stop.color} ${stop.offset}%`;
 	});
 	gradientString += ')';
@@ -231,28 +323,71 @@ function updateGradientPreview() {
 	preview.style.background = gradientString;
 }
 
-// チャートの描画
+// チャート描画エントリ
 function drawChart() {
-	if (dataset.length === 0) return;
+	if (state.dataset.length === 0) return;
 
-	// 既存のチャートをクリア
-	d3.select("#chart").selectAll("*").remove();
+	const chart = d3.select("#chart");
+	chart.selectAll("*").remove();
 
-	// 寸法設定
-	const margin = {top: 30, right: 30, bottom: 30, left: 50};
+	const margin = { top: 30, right: 30, bottom: 60, left: 50 };
 	const width = 800 - margin.left - margin.right;
 	const height = 400 - margin.top - margin.bottom;
 
-	// スケール設定
+	const svgRoot = chart.append("svg")
+		.attr("width", width + margin.left + margin.right)
+		.attr("height", height + margin.top + margin.bottom);
+
+	const defs = svgRoot.append("defs");
+	const gradientId = "chartGradient";
+
+	let gradient;
+	let stopsData = state.stops;
+
+	if (state.chartType === 'pie') {
+		gradient = defs.append("radialGradient")
+			.attr("id", gradientId)
+			.attr("cx", "50%")
+			.attr("cy", "50%")
+			.attr("r", "75%");
+		stopsData = getPieGradientStops();
+	} else {
+		gradient = defs.append("linearGradient")
+			.attr("id", gradientId)
+			.attr("x1", `${state.gradient.x1}%`)
+			.attr("y1", `${state.gradient.y1}%`)
+			.attr("x2", `${state.gradient.x2}%`)
+			.attr("y2", `${state.gradient.y2}%`);
+	}
+
+	gradient.selectAll("stop")
+		.data(stopsData)
+		.enter()
+		.append("stop")
+		.attr("offset", d => `${d.offset}%`)
+		.attr("stop-color", d => d.color)
+		.attr("stop-opacity", d => d.opacity);
+
+	const svg = svgRoot.append("g")
+		.attr("transform", `translate(${margin.left},${margin.top})`);
+
+	const dims = { margin, width, height, svgRoot };
+	const renderer = chartRenderers[state.chartType] || chartRenderers.area;
+	renderer(svg, dims, gradientId);
+}
+
+// エリアチャート描画
+function renderAreaChart(svg, dims, gradientId) {
+	const { width, height } = dims;
+
 	const xScale = d3.time.scale()
-		.domain(d3.extent(dataset, function(d) { return d.date; }))
+		.domain(d3.extent(state.dataset, d => d.date))
 		.range([0, width]);
 
 	const yScale = d3.scale.linear()
-		.domain([0, d3.max(dataset, function(d) { return d.number; }) * 1.1])
+		.domain([0, d3.max(state.dataset, d => d.number) * 1.1])
 		.range([height, 0]);
 
-	// 軸設定
 	const xAxis = d3.svg.axis()
 		.scale(xScale)
 		.orient("bottom")
@@ -263,101 +398,278 @@ function drawChart() {
 		.orient("left")
 		.ticks(5);
 
-	// 線関数
-	const lineFunction = d3.svg.line()
-		.interpolate("monotone")
-		.x(function(d) { return xScale(d.date); })
-		.y(function(d) { return yScale(d.number); });
-
-	// エリア関数
 	const areaFunction = d3.svg.area()
 		.interpolate("monotone")
-		.x(function(d) { return xScale(d.date); })
+		.x(d => xScale(d.date))
 		.y0(height)
-		.y1(function(d) { return yScale(d.number); });
+		.y1(d => yScale(d.number));
 
-	// SVG作成
-	const svg = d3.select("#chart")
-		.append("svg")
-		.attr("width", width + margin.left + margin.right)
-		.attr("height", height + margin.top + margin.bottom)
-		.append("g")
-		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	const lineFunction = d3.svg.line()
+		.interpolate("monotone")
+		.x(d => xScale(d.date))
+		.y(d => yScale(d.number));
 
-	// グラデーション定義
-	const areaGradient = svg.append('defs')
-		.append("linearGradient")
-		.attr('id', 'areaGradient')
-		.attr("x1", x1 + "%").attr("y1", y1 + "%")
-		.attr("x2", x2 + "%").attr("y2", y2 + "%");
-
-	// ストップの追加
-	areaGradient.selectAll("stop")
-		.data(stops)
-		.enter().append("stop")
-		.attr("offset", function(d) { return d.offset + "%"; })
-		.attr("stop-color", function(d) { return d.color; })
-		.attr("stop-opacity", function(d) { return d.opacity; });
-
-	// X軸
 	svg.append("g")
 		.attr("class", "x axis")
-		.attr("transform", "translate(0," + height + ")")
+		.attr("transform", `translate(0,${height})`)
 		.call(xAxis);
 
-	// Y軸
 	svg.append("g")
 		.attr("class", "y axis")
 		.call(yAxis);
 
-	// エリアチャート（グラデーション付き）
 	svg.append("path")
 		.attr("class", "area")
-		.style("fill", "url(#areaGradient)")
-		.attr("d", areaFunction(dataset));
+		.style("fill", `url(#${gradientId})`)
+		.attr("d", areaFunction(state.dataset));
 
-	// ライン
 	svg.append("path")
 		.attr("class", "line")
-		.attr("d", lineFunction(dataset));
+		.attr("d", lineFunction(state.dataset));
 
-	// ドット
 	svg.selectAll(".lineDots")
-		.data(dataset)
-		.enter().append("circle")
+		.data(state.dataset)
+		.enter()
+		.append("circle")
 		.attr("class", "lineDots")
 		.attr("r", 3)
-		.attr("cx", function(d) { return xScale(d.date); })
-		.attr("cy", function(d) { return yScale(d.number); });
+		.attr("cx", d => xScale(d.date))
+		.attr("cy", d => yScale(d.number));
+}
+
+// 棒グラフ描画
+function renderBarChart(svg, dims, gradientId) {
+	const { width, height } = dims;
+
+	const xScale = d3.scale.ordinal()
+		.domain(state.dataset.map(d => d.date))
+		.rangeRoundBands([0, width], 0.1);
+
+	const yScale = d3.scale.linear()
+		.domain([0, d3.max(state.dataset, d => d.number) * 1.1])
+		.range([height, 0]);
+
+	const xAxis = d3.svg.axis()
+		.scale(xScale)
+		.orient("bottom")
+		.tickFormat(d3.time.format("%m/%d"));
+
+	const yAxis = d3.svg.axis()
+		.scale(yScale)
+		.orient("left")
+		.ticks(5);
+
+	svg.append("g")
+		.attr("class", "x axis")
+		.attr("transform", `translate(0,${height})`)
+		.call(xAxis)
+		.selectAll("text")
+		.style("text-anchor", "end")
+		.attr("dx", "-0.6em")
+		.attr("dy", "0.15em")
+		.attr("transform", "rotate(-40)");
+
+	svg.append("g")
+		.attr("class", "y axis")
+		.call(yAxis);
+
+	svg.selectAll(".bar")
+		.data(state.dataset)
+		.enter()
+		.append("rect")
+		.attr("class", "bar")
+		.attr("x", d => xScale(d.date))
+		.attr("y", d => yScale(d.number))
+		.attr("width", xScale.rangeBand())
+		.attr("height", d => height - yScale(d.number))
+		.style("fill", `url(#${gradientId})`);
+}
+
+// 円グラフ描画
+function renderPieChart(svg, dims, gradientId) {
+	const { width, height } = dims;
+	const radius = Math.min(width, height) / 2;
+
+	const pieGroup = svg.append("g")
+		.attr("transform", `translate(${width / 2},${height / 2})`);
+
+	const pie = d3.layout.pie()
+		.sort(null)
+		.value(d => d.number);
+
+	const arc = d3.svg.arc()
+		.outerRadius(radius)
+		.innerRadius(0);
+
+	pieGroup.selectAll(".slice")
+		.data(pie(state.dataset))
+		.enter()
+		.append("path")
+		.attr("class", "slice")
+		.attr("d", arc)
+		.style("fill", `url(#${gradientId})`);
+}
+
+// 円グラフ用ストップ配列
+function getPieGradientStops() {
+	const baseStops = state.stops.map(stop => ({
+		offset: clamp(stop.offset, 0, 100),
+		color: stop.color,
+		opacity: clamp(stop.opacity, 0, 1)
+	}));
+
+	if (state.gradient.radialDirection === 'edge-to-center') {
+		return baseStops
+			.map(stop => ({
+				offset: clamp(100 - stop.offset, 0, 100),
+				color: stop.color,
+				opacity: stop.opacity
+			}))
+			.sort((a, b) => a.offset - b.offset);
+	}
+
+	return baseStops.sort((a, b) => a.offset - b.offset);
 }
 
 // エクスポートコードの更新
 function updateExportCode() {
-	// ストップをJavaScript配列として生成
-	const stopsArray = stops.map(stop =>
+	const gradient = state.gradient;
+	const stopsArray = state.stops.map(stop =>
 		`  { offset: "${stop.offset}%", color: "${stop.color}", opacity: ${stop.opacity} }`
 	).join(',\n');
 
-	// ====== 1. グラデーション定義 ======
-	const code = `const gradient = {
-  x1: "${x1.toFixed(0)}%",
-  y1: "${y1.toFixed(0)}%",
-  x2: "${x2.toFixed(0)}%",
-  y2: "${y2.toFixed(0)}%",
+	let gradientCode;
+	if (state.chartType === 'pie') {
+		gradientCode = `const gradient = {
+  type: "radial",
+  direction: "${state.gradient.radialDirection}",
   stops: [
 ${stopsArray}
   ]
 };`;
+	} else {
+		gradientCode = `const gradient = {
+  x1: "${gradient.x1.toFixed(0)}%",
+  y1: "${gradient.y1.toFixed(0)}%",
+  x2: "${gradient.x2.toFixed(0)}%",
+  y2: "${gradient.y2.toFixed(0)}%",
+  stops: [
+${stopsArray}
+  ]
+};`;
+	}
 
-	// ====== 2. グラデーション定義をSVGに追加 ======
-	const svgCode = `const areaGradient = svg.append('defs').append("linearGradient").attr('id', 'areaGradient').attr("x1", gradient.x1).attr("y1", gradient.y1).attr("x2", gradient.x2).attr("y2", gradient.y2);
+	const svgSnippets = {
+		area: `const chartGradient = svg.append('defs')
+  .append("linearGradient")
+  .attr('id', 'chartGradient')
+  .attr("x1", gradient.x1)
+  .attr("y1", gradient.y1)
+  .attr("x2", gradient.x2)
+  .attr("y2", gradient.y2);
 
-areaGradient.selectAll("stop").data(gradient.stops).enter().append("stop").attr("offset", d => d.offset).attr("stop-color", d => d.color).attr("stop-opacity", d => d.opacity);`;
+chartGradient.selectAll("stop")
+  .data(gradient.stops)
+  .enter()
+  .append("stop")
+  .attr("offset", d => d.offset)
+  .attr("stop-color", d => d.color)
+  .attr("stop-opacity", d => d.opacity);`,
+		bar: `const chartGradient = svg.append('defs')
+  .append("linearGradient")
+  .attr('id', 'chartGradient')
+  .attr("x1", gradient.x1)
+  .attr("y1", gradient.y1)
+  .attr("x2", gradient.x2)
+  .attr("y2", gradient.y2);
 
-	// ====== 3. グラデーションをエリアチャートに適用 ======
-	const applyCode = `svg.append("path").attr("class", "area").style("fill", "url(#areaGradient)").attr("d", areaFunction(dataset));`;
+chartGradient.selectAll("stop")
+  .data(gradient.stops)
+  .enter()
+  .append("stop")
+  .attr("offset", d => d.offset)
+  .attr("stop-color", d => d.color)
+  .attr("stop-opacity", d => d.opacity);`,
+		pie: `const chartGradient = svg.append('defs')
+  .append("radialGradient")
+  .attr('id', 'chartGradient')
+  .attr("cx", "50%")
+  .attr("cy", "50%")
+  .attr("r", "75%");
 
-	document.getElementById('exportCode').textContent = code;
-	document.getElementById('svgCode').textContent = svgCode;
-	document.getElementById('applyCode').textContent = applyCode;
+const stops = gradient.direction === "edge-to-center"
+  ? gradient.stops.map(stop => ({
+      offset: \`\${100 - parseFloat(stop.offset)}%\`,
+      color: stop.color,
+      opacity: stop.opacity
+    })).sort((a, b) => parseFloat(a.offset) - parseFloat(b.offset))
+  : gradient.stops;
+
+chartGradient.selectAll("stop")
+  .data(stops)
+  .enter()
+  .append("stop")
+  .attr("offset", d => d.offset)
+  .attr("stop-color", d => d.color)
+  .attr("stop-opacity", d => d.opacity);`
+	};
+
+	const applySnippets = {
+		area: `svg.append("path")
+  .attr("class", "area")
+  .style("fill", "url(#chartGradient)")
+  .attr("d", areaFunction(dataset));`,
+		bar: `svg.selectAll(".bar")
+  .data(dataset)
+  .enter()
+  .append("rect")
+  .attr("class", "bar")
+  .attr("x", d => xScale(d.date))
+  .attr("y", d => yScale(d.number))
+  .attr("width", xScale.rangeBand())
+  .attr("height", d => height - yScale(d.number))
+  .style("fill", "url(#chartGradient)");`,
+		pie: `svg.selectAll(".slice")
+  .data(pie(dataset))
+  .enter()
+  .append("path")
+  .attr("class", "slice")
+  .attr("d", arc)
+  .style("fill", "url(#chartGradient)");`
+	};
+
+	document.getElementById('exportCode').textContent = gradientCode;
+	document.getElementById('svgCode').textContent = svgSnippets[state.chartType] || '';
+	document.getElementById('applyCode').textContent = applySnippets[state.chartType] || '';
+}
+
+function adjustChartGradientDefaults() {
+	if (state.chartType === 'bar' && isAngleApproximately(state.gradient.angle, 270)) {
+		rotateGradientBy180();
+	} else if (state.chartType === 'pie') {
+		const firstStop = state.stops[0];
+		const lastStop = state.stops[state.stops.length - 1];
+		if (firstStop) firstStop.offset = 0;
+		if (lastStop) lastStop.offset = 100;
+	}
+}
+
+function rotateGradientBy180() {
+	state.gradient.angle = normalizeAngle(state.gradient.angle + 180);
+	const coords = angleToCoordinates(state.gradient.angle);
+	Object.assign(state.gradient, coords);
+}
+
+function normalizeAngle(angle) {
+	return ((angle % 360) + 360) % 360;
+}
+
+function isAngleApproximately(angle, target) {
+	return Math.abs(normalizeAngle(angle) - target) < 0.1;
+}
+
+// ユーティリティ
+function clamp(value, min, max) {
+	if (isNaN(value)) return min;
+	return Math.max(min, Math.min(max, value));
 }
