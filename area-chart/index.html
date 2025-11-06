@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Area Chart Gradient Simulator</title>
+	<link href='http://fonts.googleapis.com/css?family=Open+Sans:300,400' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<h1>Area Chart Gradient Simulator</h1>
+
+	<div class="container">
+		<!-- Left Panel: Controls -->
+		<div class="panel panel-left">
+
+			<!-- Presets -->
+			<div class="control-group">
+				<div class="section-title">プリセット</div>
+				<div class="preset-buttons">
+					<button class="btn-secondary" onclick="applyPreset('oneColor')">シンプルグラデ（2色）</button>
+					<button class="btn-secondary" onclick="applyPreset('multipleColors')">複雑グラデ（5色）</button>
+					<button class="btn-secondary" onclick="applyPreset('coolTones')">クール系（3色）</button>
+					<button class="btn-secondary" onclick="applyPreset('warmTones')">ウォーム系（3色）</button>
+				</div>
+			</div>
+
+			<!-- Gradient Direction -->
+			<div class="control-group">
+				<div class="section-title">グラデーション方向</div>
+
+				<div class="coordinates-display">
+					<strong>座標:</strong><br>
+					<span id="coordinatesDisplay">x1: 0%, y1: 100%<br>x2: 0%, y2: 0%</span>
+				</div>
+
+				<div class="direction-controls">
+					<button class="btn-secondary" onclick="setDirection(270)">↑ 上</button>
+					<button class="btn-secondary" onclick="setDirection(0)">→ 右</button>
+					<button class="btn-secondary" onclick="setDirection(90)">↓ 下</button>
+					<button class="btn-secondary" onclick="setDirection(180)">← 左</button>
+				</div>
+
+				<div class="coordinates-inputs">
+					<div class="control-group">
+						<label class="control-label">開始点 X (%)</label>
+						<input type="number" id="x1Input" min="0" max="100" value="0" onchange="updateFromCoordinates()">
+					</div>
+					<div class="control-group">
+						<label class="control-label">開始点 Y (%)</label>
+						<input type="number" id="y1Input" min="0" max="100" value="100" onchange="updateFromCoordinates()">
+					</div>
+					<div class="control-group">
+						<label class="control-label">終点 X (%)</label>
+						<input type="number" id="x2Input" min="0" max="100" value="0" onchange="updateFromCoordinates()">
+					</div>
+					<div class="control-group">
+						<label class="control-label">終点 Y (%)</label>
+						<input type="number" id="y2Input" min="0" max="100" value="0" onchange="updateFromCoordinates()">
+					</div>
+				</div>
+			</div>
+
+			<!-- Gradient Stops -->
+			<div class="control-group">
+				<div class="section-title">カラーストップ</div>
+
+				<div class="gradient-preview" id="gradientPreview"></div>
+
+				<button class="btn-primary" onclick="addStop()">+ ストップを追加</button>
+
+				<div id="stopsContainer"></div>
+			</div>
+
+			<!-- Export -->
+			<div class="export-section">
+				<div class="section-title">グラデーション定義</div>
+				<div class="export-code" id="exportCode"></div>
+
+				<div class="export-subsection">
+					<div class="export-subsection-title">グラデーション定義をSVGに追加</div>
+					<div class="export-code" id="svgCode"></div>
+				</div>
+
+				<div class="export-subsection">
+					<div class="export-subsection-title">グラデーションをエリアチャートに適用</div>
+					<div class="export-code" id="applyCode"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Right Panel: Chart -->
+		<div class="panel panel-right">
+			<div id="chart"></div>
+		</div>
+	</div>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+	<script src="script.js"></script>
+</body>
+</html>
