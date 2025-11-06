@@ -61,6 +61,7 @@ const chartRenderers = {
 
 // 初期化
 window.addEventListener('DOMContentLoaded', function() {
+	initAccordions();
 	loadData();
 	applyPreset('oneColor');
 	updateUI();
@@ -664,6 +665,33 @@ function adjustChartGradientDefaults() {
 		if (lastStop) lastStop.offset = 100;
 		state.barRotationApplied = false;
 	}
+}
+
+function initAccordions() {
+	const accordions = document.querySelectorAll('[data-accordion]');
+	accordions.forEach(acc => {
+		const toggle = acc.querySelector('[data-accordion-toggle]');
+		const content = acc.querySelector('[data-accordion-content]');
+		if (!toggle || !content) return;
+
+		const applyState = (isOpen) => {
+			if (isOpen) {
+				acc.classList.add('is-open');
+				content.style.display = 'block';
+			} else {
+				acc.classList.remove('is-open');
+				content.style.display = 'none';
+			}
+			toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+		};
+
+		applyState(acc.classList.contains('is-open'));
+
+		toggle.addEventListener('click', () => {
+			const willOpen = !acc.classList.contains('is-open');
+			applyState(willOpen);
+		});
+	});
 }
 
 function rotateGradientBy180() {
