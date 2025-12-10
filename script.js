@@ -713,3 +713,13 @@ function clamp(value, min, max) {
 	if (isNaN(value)) return min;
 	return Math.max(min, Math.min(max, value));
 }
+
+// Expose functions to window for HTML event handlers
+window.setChartType = setChartType;
+window.applyPreset = applyPreset;
+window.setDirection = setDirection;
+window.setPieDirection = setPieDirection;
+window.updateFromCoordinates = updateFromCoordinates;
+window.addStop = addStop;
+window.removeStop = removeStop;
+window.updateStop = updateStop;
