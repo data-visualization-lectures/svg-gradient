@@ -1,0 +1,4 @@
+  - 依存インストール: npm install
+  - 開発サーバ: npm run dev
+  - ビルド: npm run build
+  - プレビュー: npm run preview
