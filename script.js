@@ -1,3 +1,142 @@
+// i18next initialization
+i18next.init({
+	lng: navigator.language.startsWith('ja') ? 'ja' : 'en',
+	fallbackLng: 'en',
+	resources: {
+		ja: {
+			translation: {
+				appTitle: 'SVG グラデーションエディタ',
+				appSubtitle: 'リアルタイムにグラデーションを調整し、SVGコードとして出力できます。',
+				chartTypeLabel: 'チャートタイプ',
+				presetTitle: 'プリセット',
+				preset1: 'シンプルグラデ（2色）',
+				preset2: '複雑グラデ（5色）',
+				preset3: 'クール系（3色）',
+				preset4: 'ウォーム系（3色）',
+				directionTitle: 'グラデーション方向',
+				coordinatesLabel: '座標:',
+				upBtn: '↑ 上',
+				rightBtn: '→ 右',
+				downBtn: '↓ 下',
+				leftBtn: '← 左',
+				centerToEdgeBtn: '中心 → 外周',
+				edgeToCenterBtn: '外周 → 中心',
+				x1Label: '開始点 X (%)',
+				y1Label: '開始点 Y (%)',
+				x2Label: '終点 X (%)',
+				y2Label: '終点 Y (%)',
+				colorStopsTitle: 'カラーストップ',
+				addStopBtnLabel: '+ ストップを追加',
+				previewLabel: 'プレビュー',
+				exportCodeLabel: 'エクスポートコード',
+				createdGradientLabel: '作成したグラデーション',
+				gradientDefLabel: 'コード例：グラデーション定義',
+				applyExampleLabel: 'コード例：チャートへの適用',
+				areaChartOption: 'エリアチャート',
+				barChartOption: '棒グラフ',
+				pieChartOption: '円グラフ',
+				minStopsRequired: '最低2つのストップが必要です',
+				stopLabel: 'ストップ',
+				removeLabel: '削除',
+				offsetLabel: 'オフセット (%)',
+				opacityLabel: '不透明度',
+				modeLabel: 'モード',
+				centerToEdge: '中心 → 外周',
+				edgeToCenter: '外周 → 中心'
+			}
+		},
+		en: {
+			translation: {
+				appTitle: 'SVG Gradient Editor',
+				appSubtitle: 'Adjust gradients in real-time and export them as SVG code.',
+				chartTypeLabel: 'Chart Type',
+				presetTitle: 'Presets',
+				preset1: 'Simple Gradient (2 colors)',
+				preset2: 'Complex Gradient (5 colors)',
+				preset3: 'Cool Tones (3 colors)',
+				preset4: 'Warm Tones (3 colors)',
+				directionTitle: 'Gradient Direction',
+				coordinatesLabel: 'Coordinates:',
+				upBtn: '↑ Up',
+				rightBtn: '→ Right',
+				downBtn: '↓ Down',
+				leftBtn: '← Left',
+				centerToEdgeBtn: 'Center → Edge',
+				edgeToCenterBtn: 'Edge → Center',
+				x1Label: 'Start X (%)',
+				y1Label: 'Start Y (%)',
+				x2Label: 'End X (%)',
+				y2Label: 'End Y (%)',
+				colorStopsTitle: 'Color Stops',
+				addStopBtnLabel: '+ Add Stop',
+				previewLabel: 'Preview',
+				exportCodeLabel: 'Export Code',
+				createdGradientLabel: 'Created Gradient',
+				gradientDefLabel: 'Code Example: Gradient Definition',
+				applyExampleLabel: 'Code Example: Apply to Chart',
+				areaChartOption: 'Area Chart',
+				barChartOption: 'Bar Chart',
+				pieChartOption: 'Pie Chart',
+				minStopsRequired: 'At least 2 stops are required',
+				stopLabel: 'Stop',
+				removeLabel: 'Remove',
+				offsetLabel: 'Offset (%)',
+				opacityLabel: 'Opacity',
+				modeLabel: 'Mode',
+				centerToEdge: 'Center → Edge',
+				edgeToCenter: 'Edge → Center'
+			}
+		}
+	}
+});
+
+function initializeUI() {
+	// Update page title
+	document.title = i18next.t('appTitle');
+
+	// Update all HTML text elements
+	const textElements = {
+		'appTitle': 'appTitle',
+		'appSubtitle': 'appSubtitle',
+		'chartTypeLabel': 'chartTypeLabel',
+		'presetTitle': 'presetTitle',
+		'preset1': 'preset1',
+		'preset2': 'preset2',
+		'preset3': 'preset3',
+		'preset4': 'preset4',
+		'directionTitle': 'directionTitle',
+		'coordinatesLabel': 'coordinatesLabel',
+		'upBtn': 'upBtn',
+		'rightBtn': 'rightBtn',
+		'downBtn': 'downBtn',
+		'leftBtn': 'leftBtn',
+		'centerToEdgeBtn': 'centerToEdgeBtn',
+		'edgeToCenterBtn': 'edgeToCenterBtn',
+		'x1Label': 'x1Label',
+		'y1Label': 'y1Label',
+		'x2Label': 'x2Label',
+		'y2Label': 'y2Label',
+		'colorStopsTitle': 'colorStopsTitle',
+		'addStopButton': 'addStopBtnLabel',
+		'previewLabel': 'previewLabel',
+		'exportCodeLabel': 'exportCodeLabel',
+		'createdGradientLabel': 'createdGradientLabel',
+		'gradientDefLabel': 'gradientDefLabel',
+		'applyExampleLabel': 'applyExampleLabel',
+		'areaChartOption': 'areaChartOption',
+		'barChartOption': 'barChartOption',
+		'pieChartOption': 'pieChartOption'
+	};
+
+	Object.entries(textElements).forEach(([elementId, translationKey]) => {
+		const element = document.getElementById(elementId);
+		if (element) {
+			element.textContent = i18next.t(translationKey);
+		}
+	});
+}
+
+
 // アプリケーション状態
 const state = {
 	chartType: 'area',
@@ -59,8 +198,15 @@ const chartRenderers = {
 	pie: renderPieChart
 };
 
+// Setup language
+function setupLanguage() {
+	document.documentElement.lang = i18next.language;
+	initializeUI();
+}
+
 // 初期化
 window.addEventListener('DOMContentLoaded', function() {
+	setupLanguage();
 	initAccordions();
 	loadData();
 	applyPreset('oneColor');
@@ -228,8 +374,8 @@ function updateUI() {
 	const display = document.getElementById('coordinatesDisplay');
 	if (display) {
 		if (state.chartType === 'pie') {
-			const label = state.gradient.radialDirection === 'center-to-edge' ? '中心 → 外周' : '外周 → 中心';
-			display.innerHTML = `モード: ${label}`;
+			const label = state.gradient.radialDirection === 'center-to-edge' ? i18next.t('centerToEdge') : i18next.t('edgeToCenter');
+			display.innerHTML = `${i18next.t('modeLabel')}: ${label}`;
 		} else {
 			display.innerHTML = `x1: ${state.gradient.x1.toFixed(0)}%, y1: ${state.gradient.y1.toFixed(0)}%<br>x2: ${state.gradient.x2.toFixed(0)}%, y2: ${state.gradient.y2.toFixed(0)}%`;
 		}
@@ -259,7 +405,7 @@ function removeStop(index) {
 		updateUI();
 		drawChart();
 	} else {
-		alert("最低2つのストップが必要です");
+		alert(i18next.t('minStopsRequired'));
 	}
 }
 
@@ -291,8 +437,8 @@ function renderStops() {
 		stopElement.className = 'stop-item';
 		stopElement.innerHTML = `
 			<div class="stop-header">
-				<span class="stop-number">ストップ ${index + 1}</span>
-				${state.stops.length > 2 ? `<button class="btn-danger" onclick="removeStop(${index})">削除</button>` : ''}
+				<span class="stop-number">${i18next.t('stopLabel')} ${index + 1}</span>
+				${state.stops.length > 2 ? `<button class="btn-danger" onclick="removeStop(${index})">${i18next.t('removeLabel')}</button>` : ''}
 			</div>
 			<div class="color-input-wrapper">
 				<input type="color" value="${stop.color}" onchange="updateStop(${index}, 'color', this.value)">
@@ -300,11 +446,11 @@ function renderStops() {
 				</div>
 				<div class="stop-controls">
 					<div>
-						<label class="control-label">オフセット (%)</label>
+						<label class="control-label">${i18next.t('offsetLabel')}</label>
 						<input type="number" min="0" max="100" value="${stop.offset}" onchange="updateStop(${index}, 'offset', this.value)">
 				</div>
 				<div>
-					<label class="control-label">不透明度</label>
+					<label class="control-label">${i18next.t('opacityLabel')}</label>
 					<input type="number" min="0" max="1" step="0.1" value="${stop.opacity}" onchange="updateStop(${index}, 'opacity', this.value)">
 				</div>
 			</div>
