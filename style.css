@@ -21,6 +21,7 @@
 
 body {
 	margin: 0;
+	padding-top: 48px;
 	background: var(--color-bg);
 	color: var(--color-text);
 	font-family: 'Noto Sans JP', 'Inter', sans-serif;
