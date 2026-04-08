@@ -3,19 +3,22 @@
 
 <head>
 	<meta charset="utf-8">
-	<title>SVG グラデーションエディタ</title>
+	<title id="pageTitle">SVG グラデーションエディタ</title>
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap"
 		rel="stylesheet">
-  <script type="module" crossorigin src="./assets/index-Cr6UYi8q.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-42Yun1zN.css">
+	<script src="https://cdn.jsdelivr.net/npm/i18next@23.7.6/dist/umd/i18next.min.js"></script>
+  <script type="module" crossorigin src="./assets/index-OJxPanra.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BFEatvVK.css">
 </head>
 
 <body>
 	<header class="app-header">
-		<h1 class="app-title">SVG グラデーションエディタ</h1>
-		<p class="app-subtitle">リアルタイムにグラデーションを調整し、SVGコードとして出力できます。</p>
+		<div>
+			<h1 class="app-title" id="appTitle">SVG グラデーションエディタ</h1>
+			<p class="app-subtitle" id="appSubtitle">リアルタイムにグラデーションを調整し、SVGコードとして出力できます。</p>
+		</div>
 	</header>
 
 	<main class="app-main">
@@ -25,26 +28,26 @@
 
 				<!-- Chart Type Selector -->
 				<div class="control-group">
-					<label class="control-label" for="chartTypeSelect">チャートタイプ</label>
+					<label class="control-label" for="chartTypeSelect" id="chartTypeLabel">チャートタイプ</label>
 					<select id="chartTypeSelect" onchange="setChartType(this.value)">
-						<option value="area">エリアチャート</option>
-						<option value="bar">棒グラフ</option>
-						<option value="pie">円グラフ</option>
+						<option value="area" id="areaChartOption">エリアチャート</option>
+						<option value="bar" id="barChartOption">棒グラフ</option>
+						<option value="pie" id="pieChartOption">円グラフ</option>
 					</select>
 				</div>
 
 				<!-- Presets -->
 				<div class="accordion is-open" data-accordion>
 					<button class="accordion-header" type="button" data-accordion-toggle aria-expanded="true">
-						<span>プリセット</span>
+						<span id="presetTitle">プリセット</span>
 						<span class="accordion-icon" aria-hidden="true"></span>
 					</button>
 					<div class="accordion-content" data-accordion-content>
 						<div class="preset-buttons">
-							<button class="btn-secondary" onclick="applyPreset('oneColor')">シンプルグラデ（2色）</button>
-							<button class="btn-secondary" onclick="applyPreset('multipleColors')">複雑グラデ（5色）</button>
-							<button class="btn-secondary" onclick="applyPreset('coolTones')">クール系（3色）</button>
-							<button class="btn-secondary" onclick="applyPreset('warmTones')">ウォーム系（3色）</button>
+							<button class="btn-secondary" onclick="applyPreset('oneColor')" id="preset1">シンプルグラデ（2色）</button>
+							<button class="btn-secondary" onclick="applyPreset('multipleColors')" id="preset2">複雑グラデ（5色）</button>
+							<button class="btn-secondary" onclick="applyPreset('coolTones')" id="preset3">クール系（3色）</button>
+							<button class="btn-secondary" onclick="applyPreset('warmTones')" id="preset4">ウォーム系（3色）</button>
 						</div>
 					</div>
 				</div>
@@ -52,47 +55,47 @@
 				<!-- Gradient Direction -->
 				<div class="accordion is-open" data-accordion>
 					<button class="accordion-header" type="button" data-accordion-toggle aria-expanded="true">
-						<span>グラデーション方向</span>
+						<span id="directionTitle">グラデーション方向</span>
 						<span class="accordion-icon" aria-hidden="true"></span>
 					</button>
 					<div class="accordion-content" data-accordion-content>
 						<div class="coordinates-display">
-							<strong>座標:</strong><br>
+							<strong id="coordinatesLabel">座標:</strong><br>
 							<span id="coordinatesDisplay">x1: 0%, y1: 100%<br>x2: 0%, y2: 0%</span>
 						</div>
 
 						<div class="direction-controls" id="directionControls">
-							<button class="btn-secondary" onclick="setDirection(270)">↑ 上</button>
-							<button class="btn-secondary" onclick="setDirection(0)">→ 右</button>
-							<button class="btn-secondary" onclick="setDirection(90)">↓ 下</button>
-							<button class="btn-secondary" onclick="setDirection(180)">← 左</button>
+							<button class="btn-secondary" onclick="setDirection(270)" id="upBtn">↑ 上</button>
+							<button class="btn-secondary" onclick="setDirection(0)" id="rightBtn">→ 右</button>
+							<button class="btn-secondary" onclick="setDirection(90)" id="downBtn">↓ 下</button>
+							<button class="btn-secondary" onclick="setDirection(180)" id="leftBtn">← 左</button>
 						</div>
 
 						<div class="radial-controls" id="radialControls">
 							<button class="btn-secondary" data-mode="center-to-edge"
-								onclick="setPieDirection('center-to-edge')">中心 → 外周</button>
+								onclick="setPieDirection('center-to-edge')" id="centerToEdgeBtn">中心 → 外周</button>
 							<button class="btn-secondary" data-mode="edge-to-center"
-								onclick="setPieDirection('edge-to-center')">外周 → 中心</button>
+								onclick="setPieDirection('edge-to-center')" id="edgeToCenterBtn">外周 → 中心</button>
 						</div>
 
 						<div class="coordinates-inputs" id="coordinatesInputs">
 							<div>
-								<label class="control-label">開始点 X (%)</label>
+								<label class="control-label" id="x1Label">開始点 X (%)</label>
 								<input type="number" id="x1Input" min="0" max="100" value="0"
 									onchange="updateFromCoordinates()">
 							</div>
 							<div>
-								<label class="control-label">開始点 Y (%)</label>
+								<label class="control-label" id="y1Label">開始点 Y (%)</label>
 								<input type="number" id="y1Input" min="0" max="100" value="100"
 									onchange="updateFromCoordinates()">
 							</div>
 							<div>
-								<label class="control-label">終点 X (%)</label>
+								<label class="control-label" id="x2Label">終点 X (%)</label>
 								<input type="number" id="x2Input" min="0" max="100" value="0"
 									onchange="updateFromCoordinates()">
 							</div>
 							<div>
-								<label class="control-label">終点 Y (%)</label>
+								<label class="control-label" id="y2Label">終点 Y (%)</label>
 								<input type="number" id="y2Input" min="0" max="100" value="0"
 									onchange="updateFromCoordinates()">
 							</div>
@@ -102,11 +105,11 @@
 
 				<!-- Gradient Stops -->
 				<div class="control-group">
-					<div class="section-title">カラーストップ</div>
+					<div class="section-title" id="colorStopsTitle">カラーストップ</div>
 
 					<div class="gradient-preview" id="gradientPreview"></div>
 
-					<button class="btn-primary" id="addStopButton" onclick="addStop()">+ ストップを追加</button>
+					<button class="btn-primary" id="addStopButton" onclick="addStop()" id="addStopBtnLabel">+ ストップを追加</button>
 
 					<div id="stopsContainer"></div>
 				</div>
@@ -114,22 +117,22 @@
 
 			<!-- Right Panel: Chart + Export -->
 			<div class="panel panel-right">
-				<div class="panel-title">プレビュー</div>
+				<div class="panel-title" id="previewLabel">プレビュー</div>
 				<div class="chart-wrapper">
 					<div id="chart"></div>
 				</div>
 				<section class="panel panel-code inline-code-panel">
-					<div class="panel-title code-title">エクスポートコード</div>
+					<div class="panel-title code-title" id="exportCodeLabel">エクスポートコード</div>
 					<div class="code-section">
-						<div class="code-section-title">作成したグラデーション</div>
+						<div class="code-section-title" id="createdGradientLabel">作成したグラデーション</div>
 						<div class="export-code" id="exportCode"></div>
 					</div>
 					<div class="code-section">
-						<div class="code-section-title">コード例：グラデーション定義</div>
+						<div class="code-section-title" id="gradientDefLabel">コード例：グラデーション定義</div>
 						<div class="export-code" id="svgCode"></div>
 					</div>
 					<div class="code-section">
-						<div class="code-section-title">コード例：チャートへの適用</div>
+						<div class="code-section-title" id="applyExampleLabel">コード例：チャートへの適用</div>
 						<div class="export-code" id="applyCode"></div>
 					</div>
 				</section>
@@ -139,8 +142,8 @@
 	</main>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
-	<script src="https://auth.dataviz.jp/lib/supabase.js"></script>
-	<script src="https://auth.dataviz.jp/lib/dataviz-auth-client.js"></script>
+	<script src="https://app.dataviz.jp/lib/supabase.js"></script>
+	<script src="https://app.dataviz.jp/lib/dataviz-auth-client.js"></script>
 </body>
 
 </html>
